@@ -1,3 +1,10 @@
+openssl (0.9.8n-1+maemo4+0m5-0cssu0) unstable; urgency=high
+
+  * Correct a typo in the CMS ASN1 module which can 
+    result in invalid memory access or freeing data twice (CVE-2010-0742)
+
+ -- Tomasz Pieniążek <t.pieniazek@gazeta.pl>  Thu, 29 Mar 2012 21:14:49 +0200
+
 openssl (0.9.8n-1+maemo4+0m5) unstable; urgency=low
 
   * This entry has been added by BIFH queue processor

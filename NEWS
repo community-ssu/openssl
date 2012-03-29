@@ -7,6 +7,7 @@
 
   Major changes between OpenSSL 0.9.8m and OpenSSL 0.9.8n:
 
+      o Fix for security issue CVE-2010-0742.
       o CFB cipher definition fixes.
       o Fix security issues CVE-2010-0740 and CVE-2010-0433.
 
