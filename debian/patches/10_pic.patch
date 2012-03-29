@@ -1,0 +1,338 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 11_pic.dpatch by  <root@rborisov-desktop>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: pic.patch
+
+@DPATCH@
+
+Index: openssl-0.9.8k/crypto/Makefile
+===================================================================
+--- openssl-0.9.8k.orig/crypto/Makefile	2008-09-17 19:10:55.000000000 +0200
++++ openssl-0.9.8k/crypto/Makefile	2009-07-19 11:36:00.000000000 +0200
+@@ -57,7 +57,7 @@
+ 	echo "  #define DATE \"`LC_ALL=C LC_TIME=C date`\""; \
+ 	echo '#endif' ) >buildinf.h
+ 
+-x86cpuid-elf.s:	x86cpuid.pl perlasm/x86asm.pl
++x86cpuid-elf.S:	x86cpuid.pl perlasm/x86asm.pl
+ 	$(PERL) x86cpuid.pl elf $(CFLAGS) $(PROCESSOR) > $@
+ x86cpuid-cof.s: x86cpuid.pl perlasm/x86asm.pl
+ 	$(PERL) x86cpuid.pl coff $(CFLAGS) $(PROCESSOR) > $@
+@@ -70,7 +70,7 @@
+ uplink-cof.s:	../ms/uplink.pl
+ 	$(PERL) ../ms/uplink.pl coff > $@
+ 
+-x86_64cpuid.s: x86_64cpuid.pl
++x86_64cpuid.S: x86_64cpuid.pl
+ 	$(PERL) x86_64cpuid.pl $@
+ ia64cpuid.s: ia64cpuid.S
+ 	$(CC) $(CFLAGS) -E ia64cpuid.S > $@
+Index: openssl-0.9.8k/crypto/x86_64cpuid.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/x86_64cpuid.pl	2007-11-11 17:25:00.000000000 +0100
++++ openssl-0.9.8k/crypto/x86_64cpuid.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -95,7 +95,11 @@
+ .size	OPENSSL_wipe_cpu,.-OPENSSL_wipe_cpu
+ 
+ .section	.init
++#ifdef OPENSSL_PIC
++	call	OPENSSL_cpuid_setup\@PLT
++#else
+ 	call	OPENSSL_cpuid_setup
++#endif
+ 
+ ___
+ 
+Index: openssl-0.9.8k/crypto/md5/Makefile
+===================================================================
+--- openssl-0.9.8k.orig/crypto/md5/Makefile	2008-09-17 19:11:02.000000000 +0200
++++ openssl-0.9.8k/crypto/md5/Makefile	2009-07-19 11:36:00.000000000 +0200
+@@ -52,7 +52,8 @@
+ mx86-out.s: asm/md5-586.pl ../perlasm/x86asm.pl
+ 	(cd asm; $(PERL) md5-586.pl a.out $(CFLAGS) > ../$@)
+ 
+-md5-x86_64.s:	asm/md5-x86_64.pl;	$(PERL) asm/md5-x86_64.pl $@
++md5-x86_64.s:	asm/md5-x86_64.pl
++	$(PERL) asm/md5-x86_64.pl $@
+ 
+ files:
+ 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
+Index: openssl-0.9.8k/crypto/des/asm/desboth.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/des/asm/desboth.pl	2001-10-24 23:20:56.000000000 +0200
++++ openssl-0.9.8k/crypto/des/asm/desboth.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -16,6 +16,11 @@
+ 
+ 	&push("edi");
+ 
++	&call   (&label("pic_point0"));
++	&set_label("pic_point0");
++	&blindpop("ebp");
++	&add    ("ebp", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point0") . "]");
++
+ 	&comment("");
+ 	&comment("Load the data words");
+ 	&mov($L,&DWP(0,"ebx","",0));
+@@ -47,15 +52,21 @@
+ 	&mov(&swtmp(2),	(DWC(($enc)?"1":"0")));
+ 	&mov(&swtmp(1),	"eax");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 	&mov(&swtmp(2),	(DWC(($enc)?"0":"1")));
+ 	&mov(&swtmp(1),	"edi");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 	&mov(&swtmp(2),	(DWC(($enc)?"1":"0")));
+ 	&mov(&swtmp(1),	"esi");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 
+ 	&stack_pop(3);
+ 	&mov($L,&DWP(0,"ebx","",0));
+Index: openssl-0.9.8k/crypto/rc4/Makefile
+===================================================================
+--- openssl-0.9.8k.orig/crypto/rc4/Makefile	2008-11-19 17:03:50.000000000 +0100
++++ openssl-0.9.8k/crypto/rc4/Makefile	2009-07-19 11:36:00.000000000 +0200
+@@ -51,7 +51,7 @@
+ rx86-out.s: asm/rc4-586.pl ../perlasm/x86asm.pl
+ 	(cd asm; $(PERL) rc4-586.pl a.out $(CFLAGS) > ../$@)
+ 
+-rc4-x86_64.s: asm/rc4-x86_64.pl;	$(PERL) asm/rc4-x86_64.pl $@
++rc4-x86_64.S: asm/rc4-x86_64.pl;	$(PERL) asm/rc4-x86_64.pl $@
+ 
+ rc4-ia64.s: asm/rc4-ia64.S
+ 	@case `awk '/^#define RC4_INT/{print$$NF}' $(TOP)/include/openssl/opensslconf.h` in \
+Index: openssl-0.9.8k/crypto/rc4/asm/rc4-x86_64.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/rc4/asm/rc4-x86_64.pl	2008-09-16 12:47:27.000000000 +0200
++++ openssl-0.9.8k/crypto/rc4/asm/rc4-x86_64.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -270,7 +270,11 @@
+ 	xor	%r10,%r10
+ 	xor	%r11,%r11
+ 
++#ifdef OPENSSL_PIC
++	mov	OPENSSL_ia32cap_P\@GOTPCREL(%rip),$idx#d
++#else
+ 	mov	OPENSSL_ia32cap_P(%rip),$idx#d
++#endif
+ 	bt	\$20,$idx#d
+ 	jnc	.Lw1stloop
+ 	bt	\$30,$idx#d
+@@ -338,7 +342,11 @@
+ RC4_options:
+ 	.picmeup %rax
+ 	lea	.Lopts-.(%rax),%rax
++#ifdef OPENSSL_PIC
++	mov	OPENSSL_ia32cap_P\@GOTPCREL(%rip),%edx
++#else
+ 	mov	OPENSSL_ia32cap_P(%rip),%edx
++#endif
+ 	bt	\$20,%edx
+ 	jnc	.Ldone
+ 	add	\$12,%rax
+Index: openssl-0.9.8k/crypto/perlasm/x86unix.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/perlasm/x86unix.pl	2008-05-02 01:11:32.000000000 +0200
++++ openssl-0.9.8k/crypto/perlasm/x86unix.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -400,6 +400,29 @@
+ 	$stack=4;
+ 	}
+ 
++sub main'function_begin_B_static
++	{
++	local($func,$extra)=@_;
++
++	&main'external_label($func);
++	$func=$under.$func;
++
++	local($tmp)=<<"EOF";
++.text
++EOF
++	push(@out,$tmp);
++	if ($main'cpp)
++		{ push(@out,"TYPE($func,\@function)\n"); }
++	elsif ($main'coff)
++		{ $tmp=push(@out,".def\t$func;\t.scl\t2;\t.type\t32;\t.endef\n"); }
++	elsif ($main'aout and !$main'pic)
++		{ }
++	else	{ push(@out,".type	$func,\@function\n"); }
++	push(@out,".align\t$align\n");
++	push(@out,"$func:\n");
++	$stack=4;
++	}
++
+ sub main'function_end
+ 	{
+ 	local($func)=@_;
+@@ -694,7 +717,17 @@
+ 		{
+ 		$tmp=<<___;
+ .section	.init
++#ifdef OPENSSL_PIC
++	pushl	%ebx
++	call    .pic_point0
++.pic_point0:
++	popl    %ebx
++	addl    \$_GLOBAL_OFFSET_TABLE_+[.-.pic_point0],%ebx
++	call	$under$f\@PLT
++	popl	%ebx
++#else
+ 	call	$under$f
++#endif
+ 	jmp	.Linitalign
+ .align	$align
+ .Linitalign:
+Index: openssl-0.9.8k/crypto/perlasm/cbc.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/perlasm/cbc.pl	2005-05-09 23:48:00.000000000 +0200
++++ openssl-0.9.8k/crypto/perlasm/cbc.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -122,7 +122,11 @@
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put in array for call
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($enc_func);
++	&call	(&label("pic_point0"));
++	&set_label("pic_point0");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point0") . "]");
++	&call("$enc_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));
+@@ -187,7 +191,11 @@
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put in array for call
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($enc_func);
++	&call	(&label("pic_point1"));
++	&set_label("pic_point1");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point1") . "]");
++	&call("$enc_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));
+@@ -220,7 +228,11 @@
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put back
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($dec_func);
++	&call	(&label("pic_point2"));
++	&set_label("pic_point2");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point2") . "]");
++	&call("$dec_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));	# get return
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));	#
+@@ -263,7 +275,11 @@
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put back
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($dec_func);
++	&call	(&label("pic_point3"));
++	&set_label("pic_point3");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point3") . "]");
++	&call("$dec_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));	# get return
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));	#
+Index: openssl-0.9.8k/crypto/perlasm/x86_64-xlate.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/perlasm/x86_64-xlate.pl	2009-07-19 11:32:41.000000000 +0200
++++ openssl-0.9.8k/crypto/perlasm/x86_64-xlate.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -433,7 +433,7 @@
+ 
+     chomp($line);
+ 
+-    $line =~ s|[#!].*$||;	# get rid of asm-style comments...
++#    $line =~ s|[#!].*$||;	# get rid of asm-style comments...
+     $line =~ s|/\*.*\*/||;	# ... and C-style comments...
+     $line =~ s|^\s+||;		# ... and skip white spaces in beginning
+ 
+Index: openssl-0.9.8k/crypto/aes/Makefile
+===================================================================
+--- openssl-0.9.8k.orig/crypto/aes/Makefile	2008-09-17 19:10:55.000000000 +0200
++++ openssl-0.9.8k/crypto/aes/Makefile	2009-07-19 11:36:00.000000000 +0200
+@@ -57,7 +57,7 @@
+ ax86-out.s: asm/aes-586.pl ../perlasm/x86asm.pl
+ 	(cd asm; $(PERL) aes-586.pl a.out $(CFLAGS) $(PROCESSOR) > ../$@)
+ 
+-aes-x86_64.s: asm/aes-x86_64.pl
++aes-x86_64.S: asm/aes-x86_64.pl
+ 	$(PERL) asm/aes-x86_64.pl $@
+ 
+ files:
+Index: openssl-0.9.8k/crypto/aes/asm/aes-586.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/aes/asm/aes-586.pl	2008-12-17 15:14:51.000000000 +0100
++++ openssl-0.9.8k/crypto/aes/asm/aes-586.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -250,7 +250,7 @@
+ sub _data_word() { my $i; while(defined($i=shift)) { &data_word($i,$i); } }
+ 
+ &public_label("AES_Te");
+-&function_begin_B("_x86_AES_encrypt");
++&function_begin_B_static("_x86_AES_encrypt");
+ 	if ($vertical_spin) {
+ 		# I need high parts of volatile registers to be accessible...
+ 		&exch	($s1="edi",$key="ebx");
+@@ -539,7 +539,7 @@
+ }
+ 
+ &public_label("AES_Td");
+-&function_begin_B("_x86_AES_decrypt");
++&function_begin_B_static("_x86_AES_decrypt");
+ 	# note that caller is expected to allocate stack frame for me!
+ 	&mov	(&DWP(12,"esp"),$key);		# save key
+ 
+@@ -1461,15 +1461,22 @@
+ &public_label("AES_Td");
+ &public_label("AES_Te");
+ &function_begin_B("AES_set_decrypt_key");
++	&push	("ebx");
+ 	&mov	("eax",&wparam(0));
+ 	&mov	("ecx",&wparam(1));
+ 	&mov	("edx",&wparam(2));
+ 	&sub	("esp",12);
++
++	&call	(&label("pic_point0")); 
++	&set_label("pic_point0");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point0") . "]");
+ 	&mov	(&DWP(0,"esp"),"eax");
+ 	&mov	(&DWP(4,"esp"),"ecx");
+ 	&mov	(&DWP(8,"esp"),"edx");
+-	&call	("AES_set_encrypt_key");
++	&call	("AES_set_encrypt_key\@PLT");
+ 	&add	("esp",12);
++	&pop	("ebx");
+ 	&cmp	("eax",0);
+ 	&je	(&label("proceed"));
+ 	&ret	();
+Index: openssl-0.9.8k/crypto/aes/asm/aes-x86_64.pl
+===================================================================
+--- openssl-0.9.8k.orig/crypto/aes/asm/aes-x86_64.pl	2008-12-27 14:34:30.000000000 +0100
++++ openssl-0.9.8k/crypto/aes/asm/aes-x86_64.pl	2009-07-19 11:36:00.000000000 +0200
+@@ -974,7 +974,11 @@
+ .align	16
+ AES_set_decrypt_key:
+ 	push	%rdx
++#ifdef OPENSSL_PIC
++	call	AES_set_encrypt_key\@PLT
++#else
+ 	call	AES_set_encrypt_key
++#endif
+ 	cmp	\$0,%eax
+ 	je	.Lproceed
+ 	lea	24(%rsp),%rsp

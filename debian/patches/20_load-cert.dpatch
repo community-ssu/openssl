@@ -1,0 +1,88 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 99-unnamed.dpatch by Yauheni Kaliuta <y.kaliuta@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+--- openssl-0.9.8e/crypto/x509/by_file.c~	2007-00-16 15:43:12.000000000 +0200
++++ openssl-0.9.8e/crypto/x509/by_file.c	2008-03-05 11:40:51.000000000 +0200
+@@ -65,6 +65,11 @@
+ #include <openssl/buffer.h>
+ #include <openssl/x509.h>
+ #include <openssl/pem.h>
++/* --- CM patch BEGIN ---*/
++#include <dlfcn.h>
++#define MAGIC_FILENAME "CST"
++int X509_load_cert_cst(X509_LOOKUP *ctx);
++/* --- CM patch END ---*/
+ 
+ #ifndef OPENSSL_NO_STDIO
+ 
+@@ -129,6 +134,11 @@
+ 
+ int X509_load_cert_file(X509_LOOKUP *ctx, const char *file, int type)
+ 	{
++    /* --- CM patch BEGIN --- */
++    if (strcmp(MAGIC_FILENAME, file) == 0) {
++        return X509_load_cert_cst(ctx);
++    }
++    /* --- CM patch END --- */
+ 	int ret=0;
+ 	BIO *in=NULL;
+ 	int i,count=0;
+@@ -263,6 +273,11 @@
+ 
+ int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type)
+ {
++    /* --- CM patch BEGIN --- */
++    if (strcmp(MAGIC_FILENAME, file) == 0) {
++        return X509_load_cert_cst(ctx);
++    }
++    /* --- CM patch END --- */
+ 	STACK_OF(X509_INFO) *inf;
+ 	X509_INFO *itmp;
+ 	BIO *in;
+@@ -295,6 +310,42 @@
+ 	return count;
+ }
+ 
++/* --- CM patch BEGIN ---*/
++int X509_load_cert_cst(X509_LOOKUP *ctx)
++	{
++    void *handle;
++    char *error;
++    int err;
++
++    STACK_OF(X509) * (*load)();
++
++    handle = dlopen ("libcst.so.0", RTLD_LAZY | RTLD_GLOBAL | RTLD_NODELETE);
++    if (!handle) {
++        return 0;
++    }
++
++    dlerror();
++    *(void **) (&load) = dlsym(handle, "CST_all_CA");
++    if ((error = dlerror()) != NULL) {
++        return 0;
++    }
++
++    STACK_OF(X509) * sk = (*load)();
++    if (sk != NULL) {
++        X509 * x;
++        int i;
++        for (i = 0; i < sk_X509_num(sk); i++) {
++            x = sk_X509_value(sk, i);
++            X509_STORE_add_cert(ctx->store_ctx,x);
++        }
++        sk_X509_free(sk);
++    }
++
++    dlclose(handle);
++
++    return 1;
++	}
++/* --- CM patch END ---*/
+ 
+ #endif /* OPENSSL_NO_STDIO */
+ 
