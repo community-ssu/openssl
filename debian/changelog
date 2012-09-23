@@ -1,3 +1,9 @@
+openssl (0.9.8n-1+maemo4+0m5+0cssu0+thumb0) unstable; urgency=high
+
+  * Thumb2 compile
+
+ -- Ivaylo Dimitrov <freemangordon@abv.bg>  Sun, 23 Sep 2012 09:54:11 +0300
+
 openssl (0.9.8n-1+maemo4+0m5+0cssu0) unstable; urgency=high
 
   * Correct a typo in the CMS ASN1 module which can 

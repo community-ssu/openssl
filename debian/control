@@ -11,7 +11,7 @@ Vcs-Svn: svn://svn.debian.org/pkg-openssl/openssl/
 Package: openssl
 Priority: optional
 Architecture: any
-Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, kernel-feature-errata-430973-workaround [armel]
 Conflicts: ssleay (<< 0.9.2b)
 Suggests: ca-certificates
 Description: Secure Socket Layer (SSL) binary and related cryptographic tools
@@ -31,7 +31,7 @@ Package: libssl0.9.8
 Section: libs
 Priority: important
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, kernel-feature-errata-430973-workaround [armel]
 Conflicts: ssleay (<< 0.9.2b), libssl, openssl (<< 0.9.6-2), libssl096-dev (<< 0.9.6-2)
 Description: SSL shared libraries
  libssl and libcrypto shared libraries needed by programs like
@@ -44,7 +44,7 @@ XC-Package-Type: udeb
 Section: debian-installer
 Priority: optional
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, kernel-feature-errata-430973-workaround [armel]
 Description: crypto shared library - udeb
  libcrypto shared library.
  .
