@@ -28,6 +28,12 @@ ARCHOPTS  = OPT_$(DEB_HOST_ARCH)
 OPTS      = $($(ARCHOPTS))
 WANTED_LIBC_VERSION = 2.3.1-10
 
+ifneq (,$(findstring thumb,$(DEB_BUILD_OPTIONS)))
+	CFLAGS := $(CFLAGS) -mthumb
+endif
+
+export CFLAGS
+
 build: patch-stamp build-stamp
 build-stamp:
 	dh_testdir
