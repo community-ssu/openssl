@@ -1,5 +1,6 @@
-openssl (0.9.8n-1+maemo4+0m5+0cssu0+thumb0) unstable; urgency=high
+openssl (0.9.8n-1+maemo4+0m5+0cssu0+thumb1) unstable; urgency=high
 
+  * Fix -dbg packaging
   * Thumb2 compile
 
  -- Ivaylo Dimitrov <freemangordon@abv.bg>  Sun, 23 Sep 2012 09:54:11 +0300
