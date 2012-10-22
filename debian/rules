@@ -159,7 +159,7 @@ binary-arch:	build
 	dh_compress
 	chmod 700 debian/openssl/etc/ssl/private
 	dh_fixperms -X etc/ssl/private
-	dh_strip --dbg-package=libssl0.9.8
+	dh_strip --dbg-package=libssl0.9.8-dbg
 	dh_perl -d
 #	dh_suidregister
 	dh_makeshlibs -V "libssl0.9.8 (>= 0.9.8m-1)" --add-udeb="libcrypto0.9.8-udeb"

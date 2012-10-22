@@ -1,3 +1,9 @@
+openssl (0.9.8n-1+maemo4+0m5+0cssu1) unstable; urgency=low
+
+  * Fixed debug package
+
+ -- Christian Ratzenhofer <christian_ratzenhofer@yahoo.de>  Mon, 22 Oct 2012 18:48:26 +0200
+
 openssl (0.9.8n-1+maemo4+0m5+0cssu0) unstable; urgency=high
 
   * Correct a typo in the CMS ASN1 module which can 
