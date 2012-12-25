@@ -1,9 +1,17 @@
+<<<<<<< HEAD:debian/changelog
 openssl (0.9.8n-1+maemo4+0m5+0cssu0+thumb1) unstable; urgency=high
 
   * Fix -dbg packaging
   * Thumb2 compile
 
  -- Ivaylo Dimitrov <freemangordon@abv.bg>  Sun, 23 Sep 2012 09:54:11 +0300
+=======
+openssl (0.9.8n-1+maemo4+0m5+0cssu1) unstable; urgency=low
+
+  * Fixed debug package
+
+ -- Christian Ratzenhofer <christian_ratzenhofer@yahoo.de>  Mon, 22 Oct 2012 18:48:26 +0200
+>>>>>>> master:debian/changelog
 
 openssl (0.9.8n-1+maemo4+0m5+0cssu0) unstable; urgency=high
 
