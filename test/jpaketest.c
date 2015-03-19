@@ -1,1 +1,0 @@
-../crypto/jpake/jpaketest.c
