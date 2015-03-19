@@ -1,13 +1,13 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 10psk-library.dpatch by Jari Tenhunen <jari.tenhunen@nokia.com>
+## 22_openssl-psk-0.9.8ze-lib.dpatch by  <ivo@ivo-H81M-S2PV>
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: No description.
 
 @DPATCH@
-diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
---- old/ssl/s3_clnt.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/s3_clnt.c	2010-06-24 12:21:05.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/s3_clnt.c openssl-0.9.8ze/ssl/s3_clnt.c
+--- openssl-0.9.8ze~/ssl/s3_clnt.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/s3_clnt.c	2015-03-16 21:30:19.970041000 +0200
 @@ -121,6 +121,32 @@
   * Vipul Gupta and Sumit Gupta of Sun Microsystems Laboratories.
   *
@@ -41,7 +41,7 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
  
  #include <stdio.h>
  #include "ssl_locl.h"
-@@ -285,7 +311,9 @@
+@@ -294,7 +320,9 @@
  				}
  #endif
  			/* Check if it is anon DH/ECDH */
@@ -52,30 +52,30 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
  				{
  				ret=ssl3_get_server_certificate(s);
  				if (ret <= 0) goto end;
-@@ -1109,6 +1137,19 @@
- 
- 	if (s->s3->tmp.message_type != SSL3_MT_SERVER_KEY_EXCHANGE)
- 		{
+@@ -1138,6 +1166,19 @@
+ 			al = SSL_AD_UNEXPECTED_MESSAGE;
+ 			goto f_err;
+ 			}
 +#ifndef OPENSSL_NO_PSK
 +		/* In plain PSK ciphersuite, ServerKeyExchange can be
 +		   omitted if no identity hint is sent. Set
 +		   session->sess_cert anyway to avoid problems
 +		   later.*/
-+		if (s->s3->tmp.new_cipher->algorithms & SSL_kPSK)
++		if (alg & SSL_kPSK)
 +			{
 +			s->session->sess_cert=ssl_sess_cert_new();
 +			if (s->ctx->psk_identity_hint)
 +				OPENSSL_free(s->ctx->psk_identity_hint);
-+			s->ctx->psk_identity_hint = NULL;
++			s->ctx->psk_identity_hint=NULL;
 +			}
 +#endif
  		s->s3->tmp.reuse_message=1;
  		return(1);
  		}
-@@ -1148,6 +1189,51 @@
- 	alg=s->s3->tmp.new_cipher->algorithms;
- 	EVP_MD_CTX_init(&md_ctx);
+@@ -1177,6 +1218,51 @@
+ 	param_len=0;
  
+ 	al=SSL_AD_DECODE_ERROR;
 +#ifndef OPENSSL_NO_PSK
 +	if (alg & SSL_kPSK)
 +	        {
@@ -124,7 +124,7 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
  #ifndef OPENSSL_NO_RSA
  	if (alg & SSL_kRSA)
  		{
-@@ -1493,12 +1579,13 @@
+@@ -1583,12 +1669,13 @@
  		}
  	else
  		{
@@ -139,8 +139,8 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
 +		/* still data left over */
  		if (n != 0)
  			{
- 			al=SSL_AD_DECODE_ERROR;
-@@ -2335,6 +2422,88 @@
+ 			SSLerr(SSL_F_SSL3_GET_KEY_EXCHANGE,SSL_R_EXTRA_DATA_IN_MESSAGE);
+@@ -2438,6 +2525,88 @@
  			EVP_PKEY_free(srvr_pub_pkey);
  			}
  #endif /* !OPENSSL_NO_ECDH */
@@ -229,7 +229,7 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
  		else
  			{
  			ssl3_send_alert(s, SSL3_AL_FATAL,
-@@ -2547,18 +2716,18 @@
+@@ -2650,18 +2819,18 @@
  
  	sc=s->session->sess_cert;
  
@@ -254,9 +254,9 @@ diff -Nur old/ssl/s3_clnt.c new/ssl/s3_clnt.c
  #ifndef OPENSSL_NO_RSA
  	rsa=s->session->sess_cert->peer_rsa_tmp;
  #endif
-diff -Nur old/ssl/s3_enc.c new/ssl/s3_enc.c
---- old/ssl/s3_enc.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/s3_enc.c	2010-06-24 12:22:07.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/s3_enc.c openssl-0.9.8ze/ssl/s3_enc.c
+--- openssl-0.9.8ze~/ssl/s3_enc.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/s3_enc.c	2015-03-16 21:36:36.962047000 +0200
 @@ -108,6 +108,32 @@
   * Hudson (tjh@cryptsoft.com).
   *
@@ -290,17 +290,9 @@ diff -Nur old/ssl/s3_enc.c new/ssl/s3_enc.c
  
  #include <stdio.h>
  #include "ssl_locl.h"
-@@ -718,6 +744,7 @@
- 	case SSL_AD_INTERNAL_ERROR:	return(SSL3_AD_HANDSHAKE_FAILURE);
- 	case SSL_AD_USER_CANCELLED:	return(SSL3_AD_HANDSHAKE_FAILURE);
- 	case SSL_AD_NO_RENEGOTIATION:	return(-1); /* Don't send it :-) */
-+	case SSL_AD_UNKNOWN_PSK_IDENTITY:return(TLS1_AD_UNKNOWN_PSK_IDENTITY);
- 	default:			return(-1);
- 		}
- 	}
-diff -Nur old/ssl/s3_lib.c new/ssl/s3_lib.c
---- old/ssl/s3_lib.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/s3_lib.c	2010-06-24 12:24:30.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/s3_lib.c openssl-0.9.8ze/ssl/s3_lib.c
+--- openssl-0.9.8ze~/ssl/s3_lib.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/s3_lib.c	2015-03-16 19:21:24.821910000 +0200
 @@ -121,6 +121,32 @@
   * Vipul Gupta and Sumit Gupta of Sun Microsystems Laboratories.
   *
@@ -399,7 +391,7 @@ diff -Nur old/ssl/s3_lib.c new/ssl/s3_lib.c
  #ifndef OPENSSL_NO_SEED
  	/* SEED ciphersuites from RFC4162 */
  
-@@ -2371,6 +2455,12 @@
+@@ -2406,6 +2490,12 @@
                              continue;
                          }
  #endif /* OPENSSL_NO_KRB5 */
@@ -412,9 +404,9 @@ diff -Nur old/ssl/s3_lib.c new/ssl/s3_lib.c
  		if (SSL_C_IS_EXPORT(c))
  			{
  			ok=((alg & emask) == alg)?1:0;
-diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
---- old/ssl/s3_srvr.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/s3_srvr.c	2010-06-24 12:35:06.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/s3_srvr.c openssl-0.9.8ze/ssl/s3_srvr.c
+--- openssl-0.9.8ze~/ssl/s3_srvr.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/s3_srvr.c	2015-03-16 21:27:44.766038000 +0200
 @@ -121,6 +121,32 @@
   * Vipul Gupta and Sumit Gupta of Sun Microsystems Laboratories.
   *
@@ -448,7 +440,7 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  
  #define REUSE_CIPHER_BUG
  #define NETSCAPE_HANG_BUG
-@@ -321,7 +347,9 @@
+@@ -323,7 +349,9 @@
  		case SSL3_ST_SW_CERT_A:
  		case SSL3_ST_SW_CERT_B:
  			/* Check if it is anon DH or anon ECDH or KRB5 */
@@ -458,7 +450,7 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  				&& !(s->s3->tmp.new_cipher->algorithms & SSL_aKRB5))
  				{
  				ret=ssl3_send_server_certificate(s);
-@@ -370,6 +398,8 @@
+@@ -361,6 +389,8 @@
  			/* only send if a DH key exchange, fortezza or
  			 * RSA but we have a sign only certificate
  			 *
@@ -467,31 +459,31 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  			 * For ECC ciphersuites, we send a serverKeyExchange
  			 * message only if the cipher suite is either
  			 * ECDH-anon or ECDHE. In other cases, the
-@@ -377,6 +407,11 @@
+@@ -368,6 +398,11 @@
  			 * public key for key exchange.
  			 */
- 			if (s->s3->tmp.use_rsa_tmp
+ 			if ((l & SSL_kECDHE)
 +			/* PSK: send ServerKeyExchange if PSK identity
 +			 * hint if provided */
 +#ifndef OPENSSL_NO_PSK
 +			    || ((l & SSL_kPSK) && s->ctx->psk_identity_hint)
 +#endif
- 			    || (l & SSL_kECDHE)
  			    || (l & (SSL_DH|SSL_kFZA))
  			    || ((l & SSL_kRSA)
-@@ -414,7 +449,10 @@
+ 				&& (s->cert->pkeys[SSL_PKEY_RSA_ENC].privatekey == NULL
+@@ -404,7 +439,10 @@
  				  * (against the specs, but s3_clnt.c accepts this for SSL 3) */
  				 !(s->verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)) ||
                                   /* never request cert in Kerberos ciphersuites */
 -                                (s->s3->tmp.new_cipher->algorithms & SSL_aKRB5))
-+				(s->s3->tmp.new_cipher->algorithms & SSL_aKRB5)
++                                (s->s3->tmp.new_cipher->algorithms & SSL_aKRB5) ||
 +				/* With normal PSK Certificates and
 +				 * Certificate Requests are omitted */
-+				|| (s->s3->tmp.new_cipher->algorithms & SSL_kPSK))
++				(s->s3->tmp.new_cipher->algorithms & SSL_kPSK))
  				{
  				/* no cert request */
  				skip=1;
-@@ -1492,6 +1530,14 @@
+@@ -1511,6 +1549,14 @@
  			}
  		else 
  #endif /* !OPENSSL_NO_ECDH */
@@ -506,17 +498,18 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  			{
  			al=SSL_AD_HANDSHAKE_FAILURE;
  			SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,SSL_R_UNKNOWN_KEY_EXCHANGE_TYPE);
-@@ -1503,7 +1549,8 @@
+@@ -1521,8 +1567,8 @@
+ 			nr[i]=BN_num_bytes(r[i]);
  			n+=2+nr[i];
  			}
- 
+-
 -		if (!(s->s3->tmp.new_cipher->algorithms & SSL_aNULL))
 +		if (!(s->s3->tmp.new_cipher->algorithms & SSL_aNULL)
 +			&& !(s->s3->tmp.new_cipher->algorithms & SSL_kPSK))
  			{
  			if ((pkey=ssl_get_sign_pkey(s,s->s3->tmp.new_cipher))
  				== NULL)
-@@ -1559,6 +1606,16 @@
+@@ -1579,6 +1625,16 @@
  			}
  #endif
  
@@ -533,7 +526,7 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  		/* not anonymous */
  		if (pkey != NULL)
  			{
-@@ -2301,6 +2358,101 @@
+@@ -2344,6 +2400,101 @@
  		}
  	else
  #endif
@@ -635,9 +628,174 @@ diff -Nur old/ssl/s3_srvr.c new/ssl/s3_srvr.c
  		{
  		al=SSL_AD_HANDSHAKE_FAILURE;
  		SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,
-diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
---- old/ssl/ssl_asn1.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_asn1.c	2010-06-24 12:45:05.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl.h openssl-0.9.8ze/ssl/ssl.h
+--- openssl-0.9.8ze~/ssl/ssl.h	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl.h	2015-03-16 20:39:24.925989000 +0200
+@@ -166,6 +166,32 @@
+  * ECC cipher suite support in OpenSSL originally developed by 
+  * SUN MICROSYSTEMS, INC., and contributed to the OpenSSL project.
+  */
++/* ====================================================================
++ * Copyright 2005 Nokia. All rights reserved.
++ *
++ * The portions of the attached software ("Contribution") is developed by
++ * Nokia Corporation and is licensed pursuant to the OpenSSL open source
++ * license.
++ *
++ * The Contribution, originally written by Mika Kousa and Pasi Eronen of
++ * Nokia Corporation, consists of the "PSK" (Pre-Shared Key) ciphersuites
++ * support (see draft-ietf-tls-psk-09) to OpenSSL.
++ *
++ * No patent licenses or other rights except those expressly stated in
++ * the OpenSSL open source license shall be deemed granted or received
++ * expressly, by implication, estoppel, or otherwise.
++ *
++ * No assurances are provided by Nokia that the Contribution does not
++ * infringe the patent or other intellectual property rights of any third
++ * party or that the license provides you with all the necessary rights
++ * to make use of the Contribution.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. IN
++ * ADDITION TO THE DISCLAIMERS INCLUDED IN THE LICENSE, NOKIA
++ * SPECIFICALLY DISCLAIMS ANY LIABILITY FOR CLAIMS BROUGHT BY YOU OR ANY
++ * OTHER ENTITY BASED ON INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS OR
++ * OTHERWISE.
++ */
+ 
+ #ifndef HEADER_SSL_H 
+ #define HEADER_SSL_H 
+@@ -298,7 +324,10 @@
+ #define SSL_TXT_TLSV1		"TLSv1"
+ #define SSL_TXT_ALL		"ALL"
+ #define SSL_TXT_ECC		"ECCdraft" /* ECC ciphersuites are not yet official */
+-
++#define SSL_TXT_PSK             "PSK"
++#define SSL_TXT_kPSK            "kPSK"
++#define SSL_TXT_aPSK            "aPSK"
++ 
+ /*
+  * COMPLEMENTOF* definitions. These identifiers are used to (de-select)
+  * ciphers normally not being used.
+@@ -411,8 +440,9 @@
+  *	Timeout [ 2 ] EXPLICIT	INTEGER,	-- optional Timeout ins seconds
+  *	Peer [ 3 ] EXPLICIT	X509,		-- optional Peer Certificate
+  *	Session_ID_context [ 4 ] EXPLICIT OCTET_STRING,   -- the Session ID context
+- *	Verify_result [ 5 ] EXPLICIT INTEGER    -- X509_V_... code for `Peer'
+- *	Compression [6] IMPLICIT ASN1_OBJECT	-- compression OID XXXXX
++ *	Verify_result [ 5 ] EXPLICIT INTEGER,   -- X509_V_... code for `Peer'
++ *	PSK_identity_hint [ 6 ] EXPLICIT OCTET_STRING, -- PSK identity hint
++ *	PSK_identity [ 7 ] EXPLICIT OCTET_STRING -- PSK identity
+  *	}
+  * Look in ssl/ssl_asn1.c for more details
+  * I'm using EXPLICIT tags so I can read the damn things using asn1parse :-).
+@@ -440,6 +470,10 @@
+         unsigned int krb5_client_princ_len;
+         unsigned char krb5_client_princ[SSL_MAX_KRB5_PRINCIPAL_LENGTH];
+ #endif /* OPENSSL_NO_KRB5 */
++#ifndef OPENSSL_NO_PSK
++	char *psk_identity_hint;
++	char *psk_identity;
++#endif
+ 
+ 	int not_resumable;
+ 
+@@ -811,6 +845,14 @@
+ 	void *tlsext_status_arg;
+ #endif
+ 
++#ifndef OPENSSL_NO_PSK
++	char *psk_identity_hint;
++	unsigned int (*psk_client_callback)(SSL *ssl, const char *hint, char *identity,
++		unsigned int max_identity_len, unsigned char *psk,
++		unsigned int max_psk_len);
++	unsigned int (*psk_server_callback)(SSL *ssl, const char *identity,
++		unsigned char *psk, unsigned int max_psk_len);
++#endif
+ 	};
+ 
+ #define SSL_SESS_CACHE_OFF			0x0000
+@@ -866,6 +908,21 @@
+ void SSL_CTX_set_cookie_generate_cb(SSL_CTX *ctx, int (*app_gen_cookie_cb)(SSL *ssl, unsigned char *cookie, unsigned int *cookie_len));
+ void SSL_CTX_set_cookie_verify_cb(SSL_CTX *ctx, int (*app_verify_cookie_cb)(SSL *ssl, unsigned char *cookie, unsigned int cookie_len));
+ 
++#ifndef OPENSSL_NO_PSK
++/* the maximum length of the buffer given to callbacks containing the
++ * resulting identity/psk */
++#define PSK_MAX_IDENTITY_LEN 128
++#define PSK_MAX_PSK_LEN 64
++#define SSL_CTX_set_psk_client_callback(ctx,cb) ((ctx)->psk_client_callback=(cb))
++#define SSL_set_psk_client_callback(ssl, cb) ((ssl)->psk_client_callback=(cb))
++#define SSL_CTX_set_psk_server_callback(ctx,cb) ((ctx)->psk_server_callback=(cb))
++#define SSL_set_psk_server_callback(ssl, cb) ((ssl)->psk_server_callback=(cb))
++int SSL_CTX_use_psk_identity_hint(SSL_CTX *ctx, const char *identity_hint);
++int SSL_use_psk_identity_hint(SSL *s, const char *identity_hint);
++const char *SSL_get_psk_identity_hint(SSL *s);
++const char *SSL_get_psk_identity(SSL *s);
++#endif
++
+ #define SSL_NOTHING	1
+ #define SSL_WRITING	2
+ #define SSL_READING	3
+@@ -1016,6 +1073,14 @@
+ 	KSSL_CTX *kssl_ctx;     /* Kerberos 5 context */
+ #endif	/* OPENSSL_NO_KRB5 */
+ 
++#ifndef OPENSSL_NO_PSK
++	unsigned int (*psk_client_callback)(SSL *ssl, const char *hint, char *identity,
++		unsigned int max_identity_len, unsigned char *psk,
++		unsigned int max_psk_len);
++	unsigned int (*psk_server_callback)(SSL *ssl, const char *identity,
++		unsigned char *psk, unsigned int max_psk_len);
++#endif
++
+ 	SSL_CTX *ctx;
+ 	/* set this flag to 1 and a sleep(1) is put into all SSL_read()
+ 	 * and SSL_write() calls, good for nbio debuging :-) */
+@@ -1214,6 +1279,7 @@
+ #define SSL_AD_UNSUPPORTED_EXTENSION	TLS1_AD_UNSUPPORTED_EXTENSION
+ #define SSL_AD_CERTIFICATE_UNOBTAINABLE TLS1_AD_CERTIFICATE_UNOBTAINABLE
+ #define SSL_AD_UNRECOGNIZED_NAME	TLS1_AD_UNRECOGNIZED_NAME
++#define SSL_AD_UNKNOWN_PSK_IDENTITY     TLS1_AD_UNKNOWN_PSK_IDENTITY /* fatal */
+ #define SSL_AD_BAD_CERTIFICATE_STATUS_RESPONSE TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE
+ #define SSL_AD_BAD_CERTIFICATE_HASH_VALUE TLS1_AD_BAD_CERTIFICATE_HASH_VALUE
+ #define SSL_AD_UNKNOWN_PSK_IDENTITY	TLS1_AD_UNKNOWN_PSK_IDENTITY /* fatal */
+@@ -1829,6 +1895,7 @@
+ #define SSL_F_SSL_CTX_USE_PRIVATEKEY			 174
+ #define SSL_F_SSL_CTX_USE_PRIVATEKEY_ASN1		 175
+ #define SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE		 176
++#define SSL_F_SSL_CTX_USE_PSK_IDENTITY_HINT		 400
+ #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY			 177
+ #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_ASN1		 178
+ #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_FILE		 179
+@@ -1874,6 +1941,7 @@
+ #define SSL_F_SSL_USE_PRIVATEKEY			 201
+ #define SSL_F_SSL_USE_PRIVATEKEY_ASN1			 202
+ #define SSL_F_SSL_USE_PRIVATEKEY_FILE			 203
++#define SSL_F_SSL_USE_PSK_IDENTITY_HINT			 401
+ #define SSL_F_SSL_USE_RSAPRIVATEKEY			 204
+ #define SSL_F_SSL_USE_RSAPRIVATEKEY_ASN1		 205
+ #define SSL_F_SSL_USE_RSAPRIVATEKEY_FILE		 206
+@@ -1907,6 +1975,7 @@
+ #define SSL_R_BAD_MESSAGE_TYPE				 114
+ #define SSL_R_BAD_PACKET_LENGTH				 115
+ #define SSL_R_BAD_PROTOCOL_VERSION_NUMBER		 116
++#define SSL_R_BAD_PSK_IDENTITY_HINT_LENGTH		 2003
+ #define SSL_R_BAD_RESPONSE_ARGUMENT			 117
+ #define SSL_R_BAD_RSA_DECRYPT				 118
+ #define SSL_R_BAD_RSA_ENCRYPT				 119
+@@ -2033,6 +2102,9 @@
+ #define SSL_R_PRE_MAC_LENGTH_TOO_LONG			 205
+ #define SSL_R_PROBLEMS_MAPPING_CIPHER_FUNCTIONS		 206
+ #define SSL_R_PROTOCOL_IS_SHUTDOWN			 207
++#define SSL_R_PSK_IDENTITY_NOT_FOUND			 350
++#define SSL_R_PSK_NO_CLIENT_CB				 351
++#define SSL_R_PSK_NO_SERVER_CB				 352
+ #define SSL_R_PUBLIC_KEY_ENCRYPT_ERROR			 208
+ #define SSL_R_PUBLIC_KEY_IS_NOT_RSA			 209
+ #define SSL_R_PUBLIC_KEY_NOT_RSA			 210
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_asn1.c openssl-0.9.8ze/ssl/ssl_asn1.c
+--- openssl-0.9.8ze~/ssl/ssl_asn1.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_asn1.c	2015-03-16 19:42:16.457931000 +0200
 @@ -55,6 +55,32 @@
   * copied and put under another distribution licence
   * [including the GNU Public Licence.]
@@ -689,11 +847,9 @@ diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
  	unsigned char buf[4],ibuf1[LSIZE2],ibuf2[LSIZE2];
  	unsigned char ibuf3[LSIZE2],ibuf4[LSIZE2],ibuf5[LSIZE2];
  #ifndef OPENSSL_NO_TLSEXT
-@@ -222,7 +252,23 @@
- 		a.tlsext_tick_lifetime.data=ibuf6;
+@@ -223,6 +253,21 @@
  		ASN1_INTEGER_set(&a.tlsext_tick_lifetime,in->tlsext_tick_lifetime_hint);
  		}
-+
  #endif /* OPENSSL_NO_TLSEXT */
 +#ifndef OPENSSL_NO_PSK
 +	if (in->psk_identity_hint)
@@ -713,7 +869,7 @@ diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
  	M_ASN1_I2D_len(&(a.version),		i2d_ASN1_INTEGER);
  	M_ASN1_I2D_len(&(a.ssl_version),	i2d_ASN1_INTEGER);
  	M_ASN1_I2D_len(&(a.cipher),		i2d_ASN1_OCTET_STRING);
-@@ -256,6 +302,13 @@
+@@ -256,6 +301,13 @@
          	M_ASN1_I2D_len_EXP_opt(&(a.comp_id), i2d_ASN1_OCTET_STRING,11,v11);
  #endif
  #endif /* OPENSSL_NO_TLSEXT */
@@ -727,7 +883,7 @@ diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
  	M_ASN1_I2D_seq_total();
  
  	M_ASN1_I2D_put(&(a.version),		i2d_ASN1_INTEGER);
-@@ -282,6 +335,14 @@
+@@ -282,6 +334,14 @@
  #ifndef OPENSSL_NO_TLSEXT
  	if (in->tlsext_hostname)
          	M_ASN1_I2D_put_EXP_opt(&(a.tlsext_hostname), i2d_ASN1_OCTET_STRING,6,v6);
@@ -742,7 +898,7 @@ diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
  	if (in->tlsext_tick_lifetime_hint > 0)
        	 	M_ASN1_I2D_put_EXP_opt(&a.tlsext_tick_lifetime, i2d_ASN1_INTEGER,9,v9);
  	if (in->tlsext_tick)
-@@ -475,6 +536,24 @@
+@@ -474,6 +534,24 @@
  		}
  	else
  		ret->tlsext_hostname=NULL;
@@ -767,9 +923,9 @@ diff -Nur old/ssl/ssl_asn1.c new/ssl/ssl_asn1.c
  	ai.length=0;
  	M_ASN1_D2I_get_EXP_opt(aip,d2i_ASN1_INTEGER,9);
  	if (ai.data != NULL)
-diff -Nur old/ssl/ssl_ciph.c new/ssl/ssl_ciph.c
---- old/ssl/ssl_ciph.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_ciph.c	2010-06-24 12:47:22.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_ciph.c openssl-0.9.8ze/ssl/ssl_ciph.c
+--- openssl-0.9.8ze~/ssl/ssl_ciph.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_ciph.c	2015-03-16 19:46:40.545936000 +0200
 @@ -113,6 +113,33 @@
   * ECC cipher suite support in OpenSSL originally developed by 
   * SUN MICROSYSTEMS, INC., and contributed to the OpenSSL project.
@@ -828,7 +984,7 @@ diff -Nur old/ssl/ssl_ciph.c new/ssl/ssl_ciph.c
  
  	{0,SSL_TXT_SSLV2, 0,SSL_SSLV2, 0,0,0,0,SSL_SSL_MASK,0},
  	{0,SSL_TXT_SSLV3, 0,SSL_SSLV3, 0,0,0,0,SSL_SSL_MASK,0},
-@@ -470,6 +500,9 @@
+@@ -471,6 +501,9 @@
  #ifdef OPENSSL_NO_ECDH
  	mask |= SSL_kECDH|SSL_kECDHE;
  #endif
@@ -838,7 +994,7 @@ diff -Nur old/ssl/ssl_ciph.c new/ssl/ssl_ciph.c
  #ifdef SSL_FORBID_ENULL
  	mask |= SSL_eNULL;
  #endif
-@@ -1148,6 +1181,9 @@
+@@ -1147,6 +1180,9 @@
  	case SSL_kECDHE:
  		kx=is_export?"ECDH(<=163)":"ECDH";
  		break;
@@ -848,7 +1004,7 @@ diff -Nur old/ssl/ssl_ciph.c new/ssl/ssl_ciph.c
  	default:
  		kx="unknown";
  		}
-@@ -1174,6 +1210,9 @@
+@@ -1173,6 +1209,9 @@
  	case SSL_aECDSA:
  		au="ECDSA";
  		break;
@@ -858,12 +1014,12 @@ diff -Nur old/ssl/ssl_ciph.c new/ssl/ssl_ciph.c
  	default:
  		au="unknown";
  		break;
-diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
---- old/ssl/ssl_err.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_err.c	2010-06-24 12:49:25.000000000 +0400
-@@ -52,6 +52,32 @@
-  * Hudson (tjh@cryptsoft.com).
-  *
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_err.c openssl-0.9.8ze/ssl/ssl_err.c
+--- openssl-0.9.8ze~/ssl/ssl_err.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_err.c	2015-03-16 19:49:30.109939000 +0200
+@@ -57,6 +57,32 @@
+  * made to it will be overwritten when the script next updates this file,
+  * only reason strings will be preserved.
   */
 +/* ====================================================================
 + * Copyright 2005 Nokia. All rights reserved.
@@ -892,9 +1048,9 @@ diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
 + * OTHERWISE.
 + */
  
- /* NOTE: this file was auto generated by the mkerr.pl script: any changes
-  * made to it will be overwritten when the script next updates this file,
-@@ -209,6 +235,7 @@
+ #include <stdio.h>
+ #include <openssl/err.h>
+@@ -211,6 +237,7 @@
  {ERR_FUNC(SSL_F_SSL_CTX_USE_PRIVATEKEY),	"SSL_CTX_use_PrivateKey"},
  {ERR_FUNC(SSL_F_SSL_CTX_USE_PRIVATEKEY_ASN1),	"SSL_CTX_use_PrivateKey_ASN1"},
  {ERR_FUNC(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE),	"SSL_CTX_use_PrivateKey_file"},
@@ -902,7 +1058,7 @@ diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
  {ERR_FUNC(SSL_F_SSL_CTX_USE_RSAPRIVATEKEY),	"SSL_CTX_use_RSAPrivateKey"},
  {ERR_FUNC(SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_ASN1),	"SSL_CTX_use_RSAPrivateKey_ASN1"},
  {ERR_FUNC(SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_FILE),	"SSL_CTX_use_RSAPrivateKey_file"},
-@@ -253,6 +280,7 @@
+@@ -256,6 +283,7 @@
  {ERR_FUNC(SSL_F_SSL_USE_PRIVATEKEY),	"SSL_use_PrivateKey"},
  {ERR_FUNC(SSL_F_SSL_USE_PRIVATEKEY_ASN1),	"SSL_use_PrivateKey_ASN1"},
  {ERR_FUNC(SSL_F_SSL_USE_PRIVATEKEY_FILE),	"SSL_use_PrivateKey_file"},
@@ -910,7 +1066,7 @@ diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
  {ERR_FUNC(SSL_F_SSL_USE_RSAPRIVATEKEY),	"SSL_use_RSAPrivateKey"},
  {ERR_FUNC(SSL_F_SSL_USE_RSAPRIVATEKEY_ASN1),	"SSL_use_RSAPrivateKey_ASN1"},
  {ERR_FUNC(SSL_F_SSL_USE_RSAPRIVATEKEY_FILE),	"SSL_use_RSAPrivateKey_file"},
-@@ -289,6 +317,7 @@
+@@ -292,6 +320,7 @@
  {ERR_REASON(SSL_R_BAD_MESSAGE_TYPE)      ,"bad message type"},
  {ERR_REASON(SSL_R_BAD_PACKET_LENGTH)     ,"bad packet length"},
  {ERR_REASON(SSL_R_BAD_PROTOCOL_VERSION_NUMBER),"bad protocol version number"},
@@ -918,7 +1074,7 @@ diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
  {ERR_REASON(SSL_R_BAD_RESPONSE_ARGUMENT) ,"bad response argument"},
  {ERR_REASON(SSL_R_BAD_RSA_DECRYPT)       ,"bad rsa decrypt"},
  {ERR_REASON(SSL_R_BAD_RSA_ENCRYPT)       ,"bad rsa encrypt"},
-@@ -413,6 +442,9 @@
+@@ -418,6 +447,9 @@
  {ERR_REASON(SSL_R_PRE_MAC_LENGTH_TOO_LONG),"pre mac length too long"},
  {ERR_REASON(SSL_R_PROBLEMS_MAPPING_CIPHER_FUNCTIONS),"problems mapping cipher functions"},
  {ERR_REASON(SSL_R_PROTOCOL_IS_SHUTDOWN)  ,"protocol is shutdown"},
@@ -928,172 +1084,9 @@ diff -Nur old/ssl/ssl_err.c new/ssl/ssl_err.c
  {ERR_REASON(SSL_R_PUBLIC_KEY_ENCRYPT_ERROR),"public key encrypt error"},
  {ERR_REASON(SSL_R_PUBLIC_KEY_IS_NOT_RSA) ,"public key is not rsa"},
  {ERR_REASON(SSL_R_PUBLIC_KEY_NOT_RSA)    ,"public key not rsa"},
-diff -Nur old/ssl/ssl.h new/ssl/ssl.h
---- old/ssl/ssl.h	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl.h	2010-06-24 12:41:08.000000000 +0400
-@@ -166,6 +166,32 @@
-  * ECC cipher suite support in OpenSSL originally developed by 
-  * SUN MICROSYSTEMS, INC., and contributed to the OpenSSL project.
-  */
-+/* ====================================================================
-+ * Copyright 2005 Nokia. All rights reserved.
-+ *
-+ * The portions of the attached software ("Contribution") is developed by
-+ * Nokia Corporation and is licensed pursuant to the OpenSSL open source
-+ * license.
-+ *
-+ * The Contribution, originally written by Mika Kousa and Pasi Eronen of
-+ * Nokia Corporation, consists of the "PSK" (Pre-Shared Key) ciphersuites
-+ * support (see draft-ietf-tls-psk-09) to OpenSSL.
-+ *
-+ * No patent licenses or other rights except those expressly stated in
-+ * the OpenSSL open source license shall be deemed granted or received
-+ * expressly, by implication, estoppel, or otherwise.
-+ *
-+ * No assurances are provided by Nokia that the Contribution does not
-+ * infringe the patent or other intellectual property rights of any third
-+ * party or that the license provides you with all the necessary rights
-+ * to make use of the Contribution.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. IN
-+ * ADDITION TO THE DISCLAIMERS INCLUDED IN THE LICENSE, NOKIA
-+ * SPECIFICALLY DISCLAIMS ANY LIABILITY FOR CLAIMS BROUGHT BY YOU OR ANY
-+ * OTHER ENTITY BASED ON INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS OR
-+ * OTHERWISE.
-+ */
- 
- #ifndef HEADER_SSL_H 
- #define HEADER_SSL_H 
-@@ -298,6 +324,9 @@
- #define SSL_TXT_TLSV1		"TLSv1"
- #define SSL_TXT_ALL		"ALL"
- #define SSL_TXT_ECC		"ECCdraft" /* ECC ciphersuites are not yet official */
-+#define SSL_TXT_PSK             "PSK"
-+#define SSL_TXT_kPSK            "kPSK"
-+#define SSL_TXT_aPSK            "aPSK"
- 
- /*
-  * COMPLEMENTOF* definitions. These identifiers are used to (de-select)
-@@ -411,8 +440,9 @@
-  *	Timeout [ 2 ] EXPLICIT	INTEGER,	-- optional Timeout ins seconds
-  *	Peer [ 3 ] EXPLICIT	X509,		-- optional Peer Certificate
-  *	Session_ID_context [ 4 ] EXPLICIT OCTET_STRING,   -- the Session ID context
-- *	Verify_result [ 5 ] EXPLICIT INTEGER    -- X509_V_... code for `Peer'
-- *	Compression [6] IMPLICIT ASN1_OBJECT	-- compression OID XXXXX
-+ *	Verify_result [ 5 ] EXPLICIT INTEGER,   -- X509_V_... code for `Peer'
-+ *	PSK_identity_hint [ 6 ] EXPLICIT OCTET_STRING, -- PSK identity hint
-+ *	PSK_identity [ 7 ] EXPLICIT OCTET_STRING -- PSK identity
-  *	}
-  * Look in ssl/ssl_asn1.c for more details
-  * I'm using EXPLICIT tags so I can read the damn things using asn1parse :-).
-@@ -440,6 +470,10 @@
-         unsigned int krb5_client_princ_len;
-         unsigned char krb5_client_princ[SSL_MAX_KRB5_PRINCIPAL_LENGTH];
- #endif /* OPENSSL_NO_KRB5 */
-+#ifndef OPENSSL_NO_PSK
-+	char *psk_identity_hint;
-+	char *psk_identity;
-+#endif
- 
- 	int not_resumable;
- 
-@@ -800,6 +834,14 @@
- 	void *tlsext_status_arg;
- #endif
- 
-+#ifndef OPENSSL_NO_PSK
-+	char *psk_identity_hint;
-+	unsigned int (*psk_client_callback)(SSL *ssl, const char *hint, char *identity,
-+		unsigned int max_identity_len, unsigned char *psk,
-+		unsigned int max_psk_len);
-+	unsigned int (*psk_server_callback)(SSL *ssl, const char *identity,
-+		unsigned char *psk, unsigned int max_psk_len);
-+#endif
- 	};
- 
- #define SSL_SESS_CACHE_OFF			0x0000
-@@ -855,6 +897,21 @@
- void SSL_CTX_set_cookie_generate_cb(SSL_CTX *ctx, int (*app_gen_cookie_cb)(SSL *ssl, unsigned char *cookie, unsigned int *cookie_len));
- void SSL_CTX_set_cookie_verify_cb(SSL_CTX *ctx, int (*app_verify_cookie_cb)(SSL *ssl, unsigned char *cookie, unsigned int cookie_len));
- 
-+#ifndef OPENSSL_NO_PSK
-+/* the maximum length of the buffer given to callbacks containing the
-+ * resulting identity/psk */
-+#define PSK_MAX_IDENTITY_LEN 128
-+#define PSK_MAX_PSK_LEN 64
-+#define SSL_CTX_set_psk_client_callback(ctx,cb) ((ctx)->psk_client_callback=(cb))
-+#define SSL_set_psk_client_callback(ssl, cb) ((ssl)->psk_client_callback=(cb))
-+#define SSL_CTX_set_psk_server_callback(ctx,cb) ((ctx)->psk_server_callback=(cb))
-+#define SSL_set_psk_server_callback(ssl, cb) ((ssl)->psk_server_callback=(cb))
-+int SSL_CTX_use_psk_identity_hint(SSL_CTX *ctx, const char *identity_hint);
-+int SSL_use_psk_identity_hint(SSL *s, const char *identity_hint);
-+const char *SSL_get_psk_identity_hint(SSL *s);
-+const char *SSL_get_psk_identity(SSL *s);
-+#endif
-+
- #define SSL_NOTHING	1
- #define SSL_WRITING	2
- #define SSL_READING	3
-@@ -1005,6 +1062,14 @@
- 	KSSL_CTX *kssl_ctx;     /* Kerberos 5 context */
- #endif	/* OPENSSL_NO_KRB5 */
- 
-+#ifndef OPENSSL_NO_PSK
-+	unsigned int (*psk_client_callback)(SSL *ssl, const char *hint, char *identity,
-+		unsigned int max_identity_len, unsigned char *psk,
-+		unsigned int max_psk_len);
-+	unsigned int (*psk_server_callback)(SSL *ssl, const char *identity,
-+		unsigned char *psk, unsigned int max_psk_len);
-+#endif
-+
- 	SSL_CTX *ctx;
- 	/* set this flag to 1 and a sleep(1) is put into all SSL_read()
- 	 * and SSL_write() calls, good for nbio debuging :-) */
-@@ -1203,6 +1268,7 @@
- #define SSL_AD_UNSUPPORTED_EXTENSION	TLS1_AD_UNSUPPORTED_EXTENSION
- #define SSL_AD_CERTIFICATE_UNOBTAINABLE TLS1_AD_CERTIFICATE_UNOBTAINABLE
- #define SSL_AD_UNRECOGNIZED_NAME	TLS1_AD_UNRECOGNIZED_NAME
-+#define SSL_AD_UNKNOWN_PSK_IDENTITY     TLS1_AD_UNKNOWN_PSK_IDENTITY /* fatal */
- #define SSL_AD_BAD_CERTIFICATE_STATUS_RESPONSE TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE
- 
- #define SSL_ERROR_NONE			0
-@@ -1811,6 +1877,7 @@
- #define SSL_F_SSL_CTX_USE_PRIVATEKEY			 174
- #define SSL_F_SSL_CTX_USE_PRIVATEKEY_ASN1		 175
- #define SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE		 176
-+#define SSL_F_SSL_CTX_USE_PSK_IDENTITY_HINT		 400
- #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY			 177
- #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_ASN1		 178
- #define SSL_F_SSL_CTX_USE_RSAPRIVATEKEY_FILE		 179
-@@ -1855,6 +1922,7 @@
- #define SSL_F_SSL_USE_PRIVATEKEY			 201
- #define SSL_F_SSL_USE_PRIVATEKEY_ASN1			 202
- #define SSL_F_SSL_USE_PRIVATEKEY_FILE			 203
-+#define SSL_F_SSL_USE_PSK_IDENTITY_HINT			 401
- #define SSL_F_SSL_USE_RSAPRIVATEKEY			 204
- #define SSL_F_SSL_USE_RSAPRIVATEKEY_ASN1		 205
- #define SSL_F_SSL_USE_RSAPRIVATEKEY_FILE		 206
-@@ -1888,6 +1956,7 @@
- #define SSL_R_BAD_MESSAGE_TYPE				 114
- #define SSL_R_BAD_PACKET_LENGTH				 115
- #define SSL_R_BAD_PROTOCOL_VERSION_NUMBER		 116
-+#define SSL_R_BAD_PSK_IDENTITY_HINT_LENGTH		 2003
- #define SSL_R_BAD_RESPONSE_ARGUMENT			 117
- #define SSL_R_BAD_RSA_DECRYPT				 118
- #define SSL_R_BAD_RSA_ENCRYPT				 119
-@@ -2012,6 +2081,9 @@
- #define SSL_R_PRE_MAC_LENGTH_TOO_LONG			 205
- #define SSL_R_PROBLEMS_MAPPING_CIPHER_FUNCTIONS		 206
- #define SSL_R_PROTOCOL_IS_SHUTDOWN			 207
-+#define SSL_R_PSK_IDENTITY_NOT_FOUND			 350
-+#define SSL_R_PSK_NO_CLIENT_CB				 351
-+#define SSL_R_PSK_NO_SERVER_CB				 352
- #define SSL_R_PUBLIC_KEY_ENCRYPT_ERROR			 208
- #define SSL_R_PUBLIC_KEY_IS_NOT_RSA			 209
- #define SSL_R_PUBLIC_KEY_NOT_RSA			 210
-diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
---- old/ssl/ssl_lib.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_lib.c	2010-06-24 12:52:09.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_lib.c openssl-0.9.8ze/ssl/ssl_lib.c
+--- openssl-0.9.8ze~/ssl/ssl_lib.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_lib.c	2015-03-16 20:46:14.373996000 +0200
 @@ -115,6 +115,32 @@
   * ECC cipher suite support in OpenSSL originally developed by 
   * SUN MICROSYSTEMS, INC., and contributed to the OpenSSL project.
@@ -1139,19 +1132,19 @@ diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
  	return(s);
  err:
  	if (s != NULL)
-@@ -1296,6 +1327,11 @@
+@@ -1306,6 +1337,11 @@
+                 if ((c->algorithms & SSL_KRB5) && nokrb5)
                      continue;
  #endif /* OPENSSL_NO_KRB5 */                    
- 
 +#ifndef OPENSSL_NO_PSK
 +		/* with PSK there must be client callback set */
 +		if ((c->algorithms & SSL_PSK) && s->psk_client_callback == NULL)
 +			continue;
 +#endif /* OPENSSL_NO_PSK */
- 		j = put_cb ? put_cb(c,p) : ssl_put_cipher_by_char(s,c,p);
+ 
+ 		j = put_cb(c,p);
  		p+=j;
- 		}
-@@ -1603,6 +1639,12 @@
+@@ -1647,6 +1683,12 @@
  	 */
  	ret->options |= SSL_OP_LEGACY_SERVER_CONNECT;
  
@@ -1164,7 +1157,7 @@ diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
  	return(ret);
  err:
  	SSLerr(SSL_F_SSL_CTX_NEW,ERR_R_MALLOC_FAILURE);
-@@ -1677,6 +1719,11 @@
+@@ -1721,6 +1763,11 @@
  	if (a->client_cert_engine)
  		ENGINE_finish(a->client_cert_engine);
  #endif
@@ -1176,7 +1169,7 @@ diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
  	OPENSSL_free(a);
  	}
  
-@@ -1869,6 +1916,12 @@
+@@ -1913,6 +1960,12 @@
  		emask|=SSL_kECDHE;
  		}
  #endif
@@ -1189,7 +1182,7 @@ diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
  	c->mask=mask;
  	c->export_mask=emask;
  	c->valid=1;
-@@ -2742,6 +2795,67 @@
+@@ -2792,6 +2845,67 @@
  	}
  #endif
  
@@ -1257,9 +1250,9 @@ diff -Nur old/ssl/ssl_lib.c new/ssl/ssl_lib.c
  
  void SSL_CTX_set_msg_callback(SSL_CTX *ctx, void (*cb)(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg))
  	{
-diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
---- old/ssl/ssl_locl.h	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_locl.h	2010-06-24 12:54:19.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_locl.h openssl-0.9.8ze/ssl/ssl_locl.h
+--- openssl-0.9.8ze~/ssl/ssl_locl.h	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_locl.h	2015-03-16 20:49:34.486000000 +0200
 @@ -113,6 +113,32 @@
   * ECC cipher suite support in OpenSSL originally developed by 
   * SUN MICROSYSTEMS, INC., and contributed to the OpenSSL project.
@@ -1293,7 +1286,7 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  
  #ifndef HEADER_SSL_LOCL_H
  #define HEADER_SSL_LOCL_H
-@@ -251,7 +277,7 @@
+@@ -260,7 +286,7 @@
   * that the different entities within are mutually exclusive:
   * ONLY ONE BIT PER MASK CAN BE SET AT A TIME.
   */
@@ -1302,7 +1295,7 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  #define SSL_kRSA		0x00000001L /* RSA key exchange */
  #define SSL_kDHr		0x00000002L /* DH cert RSA CA cert */
  #define SSL_kDHd		0x00000004L /* DH cert DSA CA cert */
-@@ -261,8 +287,9 @@
+@@ -270,8 +296,9 @@
  #define SSL_kECDH               0x00000040L /* ECDH w/ long-term keys */
  #define SSL_kECDHE              0x00000080L /* ephemeral ECDH */
  #define SSL_EDH			(SSL_kEDH|(SSL_AUTH_MASK^SSL_aNULL))
@@ -1313,7 +1306,7 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  #define SSL_aRSA		0x00000100L /* Authenticate with RSA */
  #define SSL_aDSS 		0x00000200L /* Authenticate with DSS */
  #define SSL_DSS 		SSL_aDSS
-@@ -271,6 +298,7 @@
+@@ -280,6 +307,7 @@
  #define SSL_aDH 		0x00001000L /* no Authenticate, ADH */
  #define SSL_aKRB5               0x00002000L /* Authenticate with KRB5 */
  #define SSL_aECDSA              0x00004000L /* Authenticate with ECDSA */
@@ -1321,7 +1314,7 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  
  #define SSL_NULL		(SSL_eNULL)
  #define SSL_ADH			(SSL_kEDH|SSL_aNULL)
-@@ -279,6 +307,7 @@
+@@ -288,6 +316,7 @@
  #define SSL_ECDH		(SSL_kECDH|SSL_kECDHE)
  #define SSL_FZA			(SSL_aFZA|SSL_kFZA|SSL_eFZA)
  #define SSL_KRB5                (SSL_kKRB5|SSL_aKRB5)
@@ -1329,7 +1322,7 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  
  #define SSL_ENC_MASK		0x1C3F8000L
  #define SSL_DES			0x00008000L
-@@ -302,7 +331,7 @@
+@@ -311,7 +340,7 @@
  #define SSL_SSLV3		0x02000000L
  #define SSL_TLSV1		SSL_SSLV3	/* for now */
  
@@ -1338,9 +1331,9 @@ diff -Nur old/ssl/ssl_locl.h new/ssl/ssl_locl.h
  
  /*
   * Export and cipher strength information. For each cipher we have to decide
-diff -Nur old/ssl/ssl_sess.c new/ssl/ssl_sess.c
---- old/ssl/ssl_sess.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_sess.c	2010-06-24 12:57:38.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_sess.c openssl-0.9.8ze/ssl/ssl_sess.c
+--- openssl-0.9.8ze~/ssl/ssl_sess.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_sess.c	2015-03-16 20:51:19.274001000 +0200
 @@ -55,6 +55,32 @@
   * copied and put under another distribution licence
   * [including the GNU Public Licence.]
@@ -1398,9 +1391,9 @@ diff -Nur old/ssl/ssl_sess.c new/ssl/ssl_sess.c
  	OPENSSL_cleanse(ss,sizeof(*ss));
  	OPENSSL_free(ss);
  	}
-diff -Nur old/ssl/ssl_stat.c new/ssl/ssl_stat.c
---- old/ssl/ssl_stat.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_stat.c	2010-06-24 12:58:44.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_stat.c openssl-0.9.8ze/ssl/ssl_stat.c
+--- openssl-0.9.8ze~/ssl/ssl_stat.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_stat.c	2015-03-16 20:55:23.138005000 +0200
 @@ -55,6 +55,32 @@
   * copied and put under another distribution licence
   * [including the GNU Public Licence.]
@@ -1434,27 +1427,9 @@ diff -Nur old/ssl/ssl_stat.c new/ssl/ssl_stat.c
  
  #include <stdio.h>
  #include "ssl_locl.h"
-@@ -414,6 +440,7 @@
- 	case TLS1_AD_INTERNAL_ERROR:		str="IE"; break;
- 	case TLS1_AD_USER_CANCELLED:		str="US"; break;
- 	case TLS1_AD_NO_RENEGOTIATION:		str="NR"; break;
-+	case TLS1_AD_UNKNOWN_PSK_IDENTITY:	str="UP"; break;
- 	default:				str="UK"; break;
- 		}
- 	return(str);
-@@ -497,6 +524,9 @@
- 	case TLS1_AD_NO_RENEGOTIATION:
- 		str="no renegotiation";
- 		break;
-+	case TLS1_AD_UNKNOWN_PSK_IDENTITY:
-+		str="unknown PSK identity";
-+		break;
- 	default: str="unknown"; break;
- 		}
- 	return(str);
-diff -Nur old/ssl/ssl_txt.c new/ssl/ssl_txt.c
---- old/ssl/ssl_txt.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/ssl_txt.c	2010-06-24 13:00:01.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/ssl_txt.c openssl-0.9.8ze/ssl/ssl_txt.c
+--- openssl-0.9.8ze~/ssl/ssl_txt.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/ssl_txt.c	2015-03-16 20:56:39.934007000 +0200
 @@ -55,6 +55,32 @@
   * copied and put under another distribution licence
   * [including the GNU Public Licence.]
@@ -1501,9 +1476,9 @@ diff -Nur old/ssl/ssl_txt.c new/ssl/ssl_txt.c
  #ifndef OPENSSL_NO_TLSEXT
  	if (x->tlsext_tick_lifetime_hint)
  		{
-diff -Nur old/ssl/t1_enc.c new/ssl/t1_enc.c
---- old/ssl/t1_enc.c	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/t1_enc.c	2010-06-24 13:00:48.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/t1_enc.c openssl-0.9.8ze/ssl/t1_enc.c
+--- openssl-0.9.8ze~/ssl/t1_enc.c	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/t1_enc.c	2015-03-16 20:57:54.422008000 +0200
 @@ -108,6 +108,32 @@
   * Hudson (tjh@cryptsoft.com).
   *
@@ -1537,17 +1512,9 @@ diff -Nur old/ssl/t1_enc.c new/ssl/t1_enc.c
  
  #include <stdio.h>
  #include "ssl_locl.h"
-@@ -862,6 +888,7 @@
- 	case SSL_AD_INTERNAL_ERROR:	return(TLS1_AD_INTERNAL_ERROR);
- 	case SSL_AD_USER_CANCELLED:	return(TLS1_AD_USER_CANCELLED);
- 	case SSL_AD_NO_RENEGOTIATION:	return(TLS1_AD_NO_RENEGOTIATION);
-+	case SSL_AD_UNKNOWN_PSK_IDENTITY:return(TLS1_AD_UNKNOWN_PSK_IDENTITY);
- #ifdef DTLS1_AD_MISSING_HANDSHAKE_MESSAGE
- 	case DTLS1_AD_MISSING_HANDSHAKE_MESSAGE: return 
- 					  (DTLS1_AD_MISSING_HANDSHAKE_MESSAGE);
-diff -Nur old/ssl/tls1.h new/ssl/tls1.h
---- old/ssl/tls1.h	2010-06-24 10:39:08.000000000 +0400
-+++ new/ssl/tls1.h	2010-06-24 13:01:54.000000000 +0400
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' openssl-0.9.8ze~/ssl/tls1.h openssl-0.9.8ze/ssl/tls1.h
+--- openssl-0.9.8ze~/ssl/tls1.h	2015-01-15 17:04:51.000000000 +0200
++++ openssl-0.9.8ze/ssl/tls1.h	2015-03-16 21:00:14.138010000 +0200
 @@ -68,6 +68,32 @@
   * Vipul Gupta and Sumit Gupta of Sun Microsystems Laboratories.
   *
@@ -1581,7 +1548,7 @@ diff -Nur old/ssl/tls1.h new/ssl/tls1.h
  
  #ifndef HEADER_TLS1_H 
  #define HEADER_TLS1_H 
-@@ -269,6 +295,12 @@
+@@ -291,6 +317,12 @@
  #define TLS1_CK_ECDH_anon_WITH_AES_128_CBC_SHA          0x0300C018
  #define TLS1_CK_ECDH_anon_WITH_AES_256_CBC_SHA          0x0300C019
  
@@ -1594,7 +1561,7 @@ diff -Nur old/ssl/tls1.h new/ssl/tls1.h
  /* XXX
   * Inconsistency alert:
   * The OpenSSL names of ciphers with ephemeral DH here include the string
-@@ -330,6 +362,12 @@
+@@ -352,6 +384,12 @@
  #define TLS1_TXT_ECDH_anon_WITH_AES_128_CBC_SHA         "AECDH-AES128-SHA"
  #define TLS1_TXT_ECDH_anon_WITH_AES_256_CBC_SHA         "AECDH-AES256-SHA"
  
