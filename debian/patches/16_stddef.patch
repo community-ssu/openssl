@@ -14,7 +14,7 @@ Index: openssl-0.9.8k/crypto/sha/sha.h
  #ifndef HEADER_SHA_H
  #define HEADER_SHA_H
  
-+#include <stddef.h>
- #include <openssl/e_os2.h>
- #include <stddef.h>
++# include <stddef.h>
+ # include <openssl/e_os2.h>
+ # include <stddef.h>
  
