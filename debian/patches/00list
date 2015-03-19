@@ -17,6 +17,6 @@
 18_version-script.patch
 20_load-cert.dpatch
 21_configure-cflags.dpatch
-22_openssl-psk-0.9.8n-lib.dpatch
+22_openssl-psk-0.9.8ze-lib.dpatch
 23_openssl-psk-0.9.8n-test.dpatch
 24_openssl-psk-0.9.8n-doc.dpatch
