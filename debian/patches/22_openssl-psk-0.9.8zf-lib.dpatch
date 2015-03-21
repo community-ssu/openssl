@@ -75,7 +75,7 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
      param_len = 0;
  
      al = SSL_AD_DECODE_ERROR;
-++#ifndef OPENSSL_NO_PSK
++#ifndef OPENSSL_NO_PSK
 +    if (alg & SSL_kPSK) {
 +        char tmp_id_hint[PSK_MAX_IDENTITY_LEN + 1];
 +
@@ -592,7 +592,7 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
 +#define SSL_TXT_PSK             "PSK"
 +#define SSL_TXT_kPSK            "kPSK"
 +#define SSL_TXT_aPSK            "aPSK"
-+a
++
  /*-
   * COMPLEMENTOF* definitions. These identifiers are used to (de-select)
   * ciphers normally not being used.
