@@ -19,18 +19,18 @@
  
  #ifndef OPENSSL_NO_STDIO
  
-@@ -129,6 +134,11 @@
+@@ -124,6 +129,11 @@
  
  int X509_load_cert_file(X509_LOOKUP *ctx, const char *file, int type)
- 	{
+ {
 +    /* --- CM patch BEGIN --- */
 +    if (strcmp(MAGIC_FILENAME, file) == 0) {
 +        return X509_load_cert_cst(ctx);
 +    }
 +    /* --- CM patch END --- */
- 	int ret=0;
- 	BIO *in=NULL;
- 	int i,count=0;
+     int ret = 0;
+     BIO *in=NULL;
+     int i,count = 0;
 @@ -263,6 +273,11 @@
  
  int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type)
@@ -40,11 +40,11 @@
 +        return X509_load_cert_cst(ctx);
 +    }
 +    /* --- CM patch END --- */
- 	STACK_OF(X509_INFO) *inf;
- 	X509_INFO *itmp;
- 	BIO *in;
+     STACK_OF(X509_INFO) *inf;
+     X509_INFO *itmp;
+     BIO *in;
 @@ -295,6 +310,42 @@
- 	return count;
+     return count;
  }
  
 +/* --- CM patch BEGIN ---*/
@@ -83,6 +83,5 @@
 +    return 1;
 +	}
 +/* --- CM patch END ---*/
- 
- #endif /* OPENSSL_NO_STDIO */
+ #endif                          /* OPENSSL_NO_STDIO */
  
