@@ -1,3 +1,9 @@
+openssl (0.9.8zf-1+maemo1+0m5+0cssu0+thumb0) unstable; urgency=high
+
+  * Thumb2 compile
+
+ -- Ivaylo Dimitrov <freemangordon@abv.bg>  Sat, 10 Oct 2015 12:16:25 +0300
+
 openssl (0.9.8zf-1+maemo1+0m5+0cssu0) unstable; urgency=high
 
   * New upstream release
