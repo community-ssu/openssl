@@ -1,3 +1,10 @@
+openssl (0.9.8zf-1+maemo1+0m5+0cssu0) unstable; urgency=high
+
+  * New upstream release
+  * ported maemo patches from previous openssl version
+
+ -- Ivaylo Dimitrov <freemangordon@abv.bg>  Mon, 16 Mar 2015 20:24:32 +0200
+
 openssl (0.9.8n-1+maemo4+0m5+0cssu1+thumb1) unstable; urgency=high
 
   * Version bump
