@@ -20,3 +20,4 @@
 22_openssl-psk-0.9.8zf-lib.dpatch
 23_openssl-psk-0.9.8zf-test.dpatch
 24_openssl-psk-0.9.8n-doc.dpatch
+25_openssl_enable_ecc_ciphers_in_all.dpatch
