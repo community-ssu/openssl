@@ -1,3 +1,10 @@
+openssl (0.9.8zh-1+maemo1+0m5+0cssu0) unstable; urgency=high
+
+  * New upstream release
+  * Enable ECC ciphers in ALL
+
+ -- Ivaylo Dimitrov <freemangordon@abv.bg>  Mon, 28 Mar 2016 11:03:35 +0700
+
 openssl (0.9.8zf-1+maemo1+0m5+0cssu0+thumb0) unstable; urgency=high
 
   * Thumb2 compile

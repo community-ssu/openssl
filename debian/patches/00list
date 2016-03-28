@@ -2,7 +2,7 @@
 02_config-hurd.patch
 03_debian-targets.patch
 04_engines-path.patch
-05_make-targets.patch
+#05_make-targets.patch
 06_man-dir.patch
 07_man-section.patch
 08_no-rpath.patch
