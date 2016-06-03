@@ -1,5 +1,5 @@
 Source: openssl
-Build-Depends: debhelper (>= 5.0.22), binutils (>= 2.14.90.0.7), zlib1g-dev, m4, bc
+Build-Depends: debhelper (>= 5.0.22), binutils (>= 2.14.90.0.7), zlib1g-dev, m4, bc, dpatch
 Section: utils
 Priority: optional
 Maintainer: Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>
