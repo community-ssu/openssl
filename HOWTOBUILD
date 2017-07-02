@@ -1,7 +1,6 @@
 1. git clone openssl
-2. mv openssl openssl-0.9.8zh
-3. wget http://openssl.org/source/openssl-0.9.8zh.tar.gz
-4. mv openssl-0.9.8zh.tar.gz openssl_0.9.8zh.orig.tar.gz
-5. extract openssl_0.9.8zh.orig.tar.gz
-6. cd openssl-0.9.8zh
-7. build with dpkg-buildpackage -rfakeroot -sa -us -uc -i.git
+2. cp -r openssl openssl-1.0.2k
+3. wget -O openssl_1.0.2k.orig.tar.gz http://openssl.org/source/openssl-1.0.2k.tar.gz
+4. tar xzf openssl_1.0.2k.orig.tar.gz
+5. cd openssl-1.0.2k
+6. dpkg-buildpackage -rfakeroot -sa -us -uc -i.git

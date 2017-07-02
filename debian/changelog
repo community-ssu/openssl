@@ -1,3 +1,9 @@
+openssl (1.0.2k-1+maemo1+0osm2go0) unstable; urgency=high
+
+  * New upstream branch
+
+ -- Rolf Eike Beer <eike@sf-mail.de>  Sun, 02 Jul 2017 09:15:22 +0200
+
 openssl (0.9.8zh-1+maemo1+0m5+0cssu0) unstable; urgency=high
 
   * New upstream release
