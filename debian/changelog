@@ -1,3 +1,9 @@
+openssl (1.0.2o-1+maemo1+0osm2go0) unstable; urgency=low
+
+  * Latest upstream release.
+
+ -- Rolf Eike Beer <eike@sf-mail.de>  Wed, 30 May 2018 21:51:43 +0200
+
 openssl (1.0.2l-1+maemo1+0osm2go0) unstable; urgency=high
 
   * Latest upstream release.

@@ -114,7 +114,7 @@ binary-arch:	build
 	dh_strip --dbg-package=libssl1.0.2-dbg
 	dh_perl -d
 #	dh_suidregister
-	dh_makeshlibs -V "libssl1.0.2 (>= 1.0.2l-1)"
+	dh_makeshlibs -V "libssl1.0.2 (>= 1.0.2o-1)"
 	dh_shlibdeps -L libssl1.0.2 -l debian/libssl1.0.2/usr/lib
 	dh_gencontrol
 	dh_installdeb
