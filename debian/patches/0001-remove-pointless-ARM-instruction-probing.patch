@@ -1,11 +1,11 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 0001-remove-pointless-ARM-instruction-probing.patch by  <ke@sf-mail.de>
+## 0001-remove-pointless-ARM-instruction-probing.patch by  <eike@sf-mail.de>
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: remove pointless ARM instruction probing
 ##
 ## From 4fc945f1fbcf815e9cb07cc9e3d1a7e411fcd0da Mon Sep 17 00:00:00 2001
-## From: Rolf Eike Beer <eb@emlix.com>
+## From: Rolf Eike Beer <eike@sf-mail.de>
 ## Date: Fri, 30 Jun 2017 22:04:54 +0200
 ## Subject: [PATCH] remove pointless ARM instruction probing
 ##
