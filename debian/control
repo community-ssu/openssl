@@ -57,3 +57,10 @@ Architecture: any
 Depends: libssl1.0.2 (= ${binary:Version}), ${misc:Depends}
 Description: Symbol tables for libssl and libcrypto
  This package is part of the OpenSSL implementation of SSL.
+
+Package: extra-ca-certificates
+Priority: extra
+Architecture: any
+Depends: libssl1.0.2, ${misc:Depends}
+Description: Additional root certificates
+ This package is part of the OpenSSL implementation of SSL.
