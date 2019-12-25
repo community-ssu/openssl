@@ -1,7 +1,6 @@
-1. git clone openssl
-2. mv openssl openssl-0.9.8zh
-3. wget http://openssl.org/source/openssl-0.9.8zh.tar.gz
-4. mv openssl-0.9.8zh.tar.gz openssl_0.9.8zh.orig.tar.gz
-5. extract openssl_0.9.8zh.orig.tar.gz
-6. cd openssl-0.9.8zh
-7. build with dpkg-buildpackage -rfakeroot -sa -us -uc -i.git
+1. git clone -b openssl-1.0.2 https://github.com/osm2go/openssl.git
+2. wget -O openssl_1.0.2u.orig.tar.gz http://openssl.org/source/openssl-1.0.2u.tar.gz
+3. tar xzf openssl_1.0.2u.orig.tar.gz
+4. cp -r openssl/debian openssl-1.0.2u
+5. cd openssl-1.0.2u
+6. dpkg-buildpackage -rfakeroot -sa -us -uc
