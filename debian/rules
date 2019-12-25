@@ -108,6 +108,7 @@ binary-arch:	build
 #	rmdir debian/tmp/usr/include/openssl
 #	rmdir debian/tmp/usr/include
 #	for opt in $(OPTS); do set -xe; rm -fr debian/tmp/usr/lib/$$opt; done
+	sed '/^#!/s#/.*/perl#/usr/bin/perl#' -i debian/openssl/usr/bin/c_rehash
 	dh_compress
 	chmod 700 debian/openssl/etc/ssl/private
 	dh_fixperms -X etc/ssl/private
